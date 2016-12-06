@@ -14,14 +14,17 @@
 # include <sys/sem.h>
 # include <sys/time.h>
 # include <math.h>
+# include <time.h>
 # include <errno.h>
 # include <string.h>
 # include <pthread.h>
 # include <ctype.h>
 # include <iostream>
+# include <ctime>
+# include <cstdlib>
 using namespace std;
 
-# define SEM_KEY 0x50 // Change this number as needed
+# define SEM_KEY 0x50102322 // Change this number as needed
 
 union semun {
     int val;               /* used for SETVAL only */

@@ -8,6 +8,18 @@
 void *producer (void *id);
 void *consumer (void *id);
 
+struct thread_args{
+  int NO_JOBS;
+  int QUEUE_SIZE;
+  int* BUFFER;
+  int* THREAD_ID_P;
+  int* THREAD_ID_C;
+  int SEM_ID;
+  int* FILL;
+  int* USE;
+};
+
+
 int main (int argc, char **argv)
 {
   int queue_size = check_arg(argv[1]);
@@ -18,14 +30,70 @@ int main (int argc, char **argv)
     return 0;
   }
 
+  srand(time(0));
+  int buffer[queue_size];
+  int job_in_queue = 0;
+  int job_consume = 0;
+  //  int* fill = &job_in_queue;
+  //  int* use = &job_consume; 
+  int thread_id_p = 0;
+  int thread_id_c = 0;
+  int sem_id =  sem_create(SEM_KEY,3);
 
+  // sem_id[0]: mutex
+  if(sem_init(sem_id,0,1)<0){
+    sem_close(sem_id);
+    return 0;
+  }
 
-  pthread_t producerid;
-  int parameter = 5;
+  //sem_id[1]: number of jobs in the queue
+  if(sem_init(sem_id,1,0)<0){
+    sem_close(sem_id);
+    return 0;
+  }
 
-  pthread_create (&producerid, NULL, producer, (void *) &parameter);
+  //sem_id[2]: number of empty space in the queue
+  if(sem_init(sem_id,2,queue_size)<0){
+    sem_close(sem_id);
+    return 0;
+  }
 
-  pthread_join (producerid, NULL);
+  sem_attach(SEM_KEY);
+  
+  pthread_t producerid[no_producer];
+  pthread_t consumerid[no_consumer];
+  
+
+  struct thread_args arguement;
+  arguement.NO_JOBS = no_job;
+  arguement.QUEUE_SIZE = queue_size;
+  arguement.BUFFER = buffer;
+  arguement.SEM_ID = sem_id;
+  arguement.FILL = &job_in_queue;
+  arguement.USE = &job_consume;
+  arguement.THREAD_ID_P = &thread_id_p;
+  arguement.THREAD_ID_C = &thread_id_c;
+  
+  for(int i=0; i<no_producer;i++){
+    pthread_create (&producerid[i], NULL, producer, (void *) &arguement);
+    
+  }
+
+  
+  for(int i=0; i<no_consumer; i++){
+    pthread_create (&consumerid[i], NULL, consumer, (void *) &arguement);
+  }
+
+  for(int i=0; i<no_producer; i++){
+    pthread_join (producerid[i], NULL);
+  }
+
+  for(int i=0; i<no_consumer; i++){
+    pthread_join (consumerid[i], NULL);
+  }
+  
+  sem_close(sem_id);
+
 
   return 0;
 }
@@ -34,18 +102,70 @@ void *producer(void *parameter)
 {
 
   // TODO
+  struct thread_args* args = (struct thread_args*) parameter;
+  sem_wait(args->SEM_ID,0);
+  int thread_id = ++*(args->THREAD_ID_P);
+  sem_signal(args->SEM_ID,0);
+  //create jobs
+  int job[args->NO_JOBS];
+  for(int i = 0; i < args->NO_JOBS; i++){
+    int duration = (rand()%10)+1;
+    // cout<<temp<<" ";
+    job[i]=duration;
+    
+    sem_wait(args->SEM_ID,2);
+    sem_wait(args->SEM_ID,0);
+    
+    int job_id = *(args->FILL);
+    args->BUFFER[job_id] = job[i];
+    cout<<"Producer("<<thread_id<<"): Job id "<<job_id <<" duration "<<duration<<endl;
+    *(args->FILL) = (job_id + 1)% args->QUEUE_SIZE;
+    
+    sem_signal(args->SEM_ID,0);
+    sem_signal(args->SEM_ID,1);
+    int sleep_time = (rand()%5)+1;
+    sleep(sleep_time);
+  }
 
-  int *param = (int *) parameter;
-
-  cout << "Parameter = " << *param << endl;
-
+  sem_wait(args->SEM_ID,0);
+  cout<<"Producer("<<thread_id<<"): No more jobs to generate."<<endl;
+  sem_signal(args->SEM_ID,0);
   pthread_exit(0);
 }
 
-void *consumer (void *id)
-{
-    // TODO
 
+void *consumer (void *parameter)
+{
+  struct thread_args* args = (struct thread_args*) parameter;
+  
+  sem_wait(args->SEM_ID,0);
+  int thread_id = ++ *(args->THREAD_ID_C);
+  sem_signal(args->SEM_ID,0);
+  
+  while(true){
+    int sleep_time;
+    sem_wait(args->SEM_ID,1);
+    sem_wait(args->SEM_ID,0);
+    
+    int job_id = *(args->USE);
+    sleep_time = args->BUFFER[job_id];
+    cout<<"Consumer("<<thread_id<<"): Job id "<<job_id<<" executing sleep duration "<<sleep_time<<endl;
+    *(args->USE) = (job_id + 1)% args->QUEUE_SIZE;
+
+    sem_signal(args->SEM_ID,0);
+    sem_signal(args->SEM_ID,2);
+
+    sleep(sleep_time);
+    
+    sem_wait(args->SEM_ID,0);
+    cout<<"Consumer("<<thread_id<<"): Job id "<<job_id<<" completed"<<endl;
+    sem_signal(args->SEM_ID,0);
+  }
+
+  sem_wait(args->SEM_ID,0);
+  cout<<"Consumer("<<thread_id<<"): No more jobs left."<<endl;
+  sem_signal(args->SEM_ID,0);
+  
   pthread_exit (0);
 
 }
