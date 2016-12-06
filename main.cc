@@ -96,6 +96,10 @@ int main (int argc, char **argv)
   
   sem_close(sem_id);
 
+  if(errno == EAGAIN){
+    cout<<"Time's up"<<endl;
+  }
+
 
   return 0;
 }
@@ -110,7 +114,10 @@ void *producer(void *parameter)
   sem_signal(args->SEM_ID,0);
   //create jobs
   int job[args->NO_JOBS];
+  int sleep_time = 0;
+
   for(int i = 0; i < args->NO_JOBS; i++){
+    sleep(sleep_time);
     int duration = (rand()%10)+1;
     // cout<<temp<<" ";
     job[i]=duration;
@@ -125,8 +132,7 @@ void *producer(void *parameter)
     
     sem_signal(args->SEM_ID,0);
     sem_signal(args->SEM_ID,1);
-    int sleep_time = (rand()%5)+1;
-    sleep(sleep_time);
+    sleep_time = (rand()%5)+1;
   }
 
   sem_wait(args->SEM_ID,0);
@@ -147,9 +153,10 @@ void *consumer (void *parameter)
   while(true){
     int sleep_time;
     int result = sem_waittime(args->SEM_ID,1);
-    if(result == -1 && errno== EAGAIN){
+    if(result == -1 && errno == EAGAIN){
       break;
-    }
+     }
+    
     sem_wait(args->SEM_ID,0);
     int job_id = *(args->USE);
     sleep_time = args->BUFFER[job_id];

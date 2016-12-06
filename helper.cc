@@ -65,11 +65,11 @@ int sem_waittime(int id, short unsigned int num){
     {num,-1,SEM_UNDO}
   };
   struct timespec ts;
-  //clock_gettime(CLOCK_REALTIME, &ts);
+  // clock_gettime(CLOCK_REALTIME, &ts);
   ts.tv_sec = 20;
-  int result;
-  result = semtimedop(id,op,1,&ts);
-  return result;
+  ts.tv_nsec = 0;
+  int temp =semtimedop(id,op,1,&ts);
+  return  temp;
 }
 
 void sem_signal (int id, short unsigned int num)
