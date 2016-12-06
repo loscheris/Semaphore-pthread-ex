@@ -109,7 +109,7 @@ void *producer(void *parameter)
 
   // TODO
   struct thread_args* args = (struct thread_args*) parameter;
-  sem_wait(args->SEM_ID,0);
+  
   int thread_id = ++*(args->THREAD_ID_P);
   sem_signal(args->SEM_ID,0);
   //create jobs
@@ -122,7 +122,11 @@ void *producer(void *parameter)
     // cout<<temp<<" ";
     job[i]=duration;
     
-    sem_wait(args->SEM_ID,2);
+    int result= sem_waittime(args->SEM_ID,2);
+    if(result == -1 && errno == EAGAIN){
+      cout<<"Producer("<<thread_id<<"): Time out."<<endl;
+      break;
+    }
     sem_wait(args->SEM_ID,0);
     
     int job_id = *(args->FILL);
@@ -152,12 +156,13 @@ void *consumer (void *parameter)
   
   while(true){
     int sleep_time;
+
     int result = sem_waittime(args->SEM_ID,1);
     if(result == -1 && errno == EAGAIN){
       break;
      }
-    
     sem_wait(args->SEM_ID,0);
+
     int job_id = *(args->USE);
     sleep_time = args->BUFFER[job_id];
     cout<<"Consumer("<<thread_id<<"): Job id "<<job_id<<" executing sleep duration "<<sleep_time<<endl;
