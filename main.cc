@@ -73,10 +73,10 @@ int main (int argc, char **argv)
   arguement.USE = &job_consume;
   arguement.THREAD_ID_P = &thread_id_p;
   arguement.THREAD_ID_C = &thread_id_c;
+
   
   for(int i=0; i<no_producer;i++){
-    pthread_create (&producerid[i], NULL, producer, (void *) &arguement);
-    
+    pthread_create (&producerid[i], NULL, producer, (void *) &arguement);  
   }
 
   
@@ -85,12 +85,14 @@ int main (int argc, char **argv)
   }
 
   for(int i=0; i<no_producer; i++){
-    pthread_join (producerid[i], NULL);
+    pthread_join(producerid[i], NULL);
   }
 
   for(int i=0; i<no_consumer; i++){
-    pthread_join (consumerid[i], NULL);
+    pthread_join(consumerid[i], NULL);
   }
+
+  cout<<"Finished"<<endl;
   
   sem_close(sem_id);
 
@@ -144,9 +146,11 @@ void *consumer (void *parameter)
   
   while(true){
     int sleep_time;
-    sem_wait(args->SEM_ID,1);
+    int result = sem_waittime(args->SEM_ID,1);
+    if(result == -1 && errno== EAGAIN){
+      break;
+    }
     sem_wait(args->SEM_ID,0);
-    
     int job_id = *(args->USE);
     sleep_time = args->BUFFER[job_id];
     cout<<"Consumer("<<thread_id<<"): Job id "<<job_id<<" executing sleep duration "<<sleep_time<<endl;

@@ -22,6 +22,7 @@
 # include <iostream>
 # include <ctime>
 # include <cstdlib>
+# include <errno.h>
 using namespace std;
 
 # define SEM_KEY 0x50102322 // Change this number as needed
@@ -39,3 +40,4 @@ int sem_init (int, int, int);
 void sem_wait (int, short unsigned int);
 void sem_signal (int, short unsigned int);
 int sem_close (int);
+int sem_waittime(int id, short unsigned int num);
