@@ -109,8 +109,10 @@ void *producer(void *parameter)
 
   // TODO
   struct thread_args* args = (struct thread_args*) parameter;
+  sem_wait(args->SEM_ID,0);
   int thread_id = ++*(args->THREAD_ID_P);
-
+  sem_signal(args->SEM_ID,0);
+  
   //create jobs
   int job[args->NO_JOBS];
   int sleep_time=0;
@@ -128,10 +130,10 @@ void *producer(void *parameter)
     }
 
     sem_wait(args->SEM_ID,0);
-    int job_id = *(args->FILL);
-    args->BUFFER[job_id] = job[i];
+    int job_id = *(args->FILL)+1;
+    args->BUFFER[job_id-1] = job[i];
     cout<<"Producer("<<thread_id<<"): Job id "<<job_id <<" duration "<<duration<<endl;
-    *(args->FILL) = (job_id + 1)% args->QUEUE_SIZE;
+    *(args->FILL) =(job_id)% args->QUEUE_SIZE;
     
     sem_signal(args->SEM_ID,0);
     sem_signal(args->SEM_ID,1);
@@ -149,9 +151,9 @@ void *consumer (void *parameter)
 {
   struct thread_args* args = (struct thread_args*) parameter;
   
-  // sem_wait(args->SEM_ID,0);
+  sem_wait(args->SEM_ID,0);
   int thread_id = ++ *(args->THREAD_ID_C);
-  //sem_signal(args->SEM_ID,0);
+  sem_signal(args->SEM_ID,0);
   
   while(true){
     int sleep_time;
@@ -162,10 +164,10 @@ void *consumer (void *parameter)
     }
     sem_wait(args->SEM_ID,0);
 
-    int job_id = *(args->USE);
-    sleep_time = args->BUFFER[job_id];
+    int job_id = *(args->USE)+1;
+    sleep_time = args->BUFFER[job_id-1];
     cout<<"Consumer("<<thread_id<<"): Job id "<<job_id<<" executing sleep duration "<<sleep_time<<endl;
-    *(args->USE) = (job_id + 1)% args->QUEUE_SIZE;
+    *(args->USE) = (job_id)% args->QUEUE_SIZE;
 
     sem_signal(args->SEM_ID,0);
     sem_signal(args->SEM_ID,2);
