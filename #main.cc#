@@ -106,7 +106,6 @@ int main (int argc, char **argv)
 
 void *producer(void *parameter)
 {
-
   // TODO
   struct thread_args* args = (struct thread_args*) parameter;
   int thread_id = ++*(args->THREAD_ID_P);
@@ -151,13 +150,14 @@ void *consumer (void *parameter)
   
   // sem_wait(args->SEM_ID,0);
   int thread_id = ++ *(args->THREAD_ID_C);
-  //sem_signal(args->SEM_ID,0);
+  // sem_signal(args->SEM_ID,0);
   
   while(true){
     int sleep_time;
 
     int result=sem_waittime(args->SEM_ID,1);
     if(result == -1 && errno == EAGAIN){
+      cout<<"Consumer("<<thread_id<<"): No job arrive in 20 seconds."<<endl;
       break;
     }
     sem_wait(args->SEM_ID,0);
