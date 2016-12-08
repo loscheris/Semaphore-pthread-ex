@@ -108,7 +108,6 @@ void *producer(void *parameter)
   int sleep_time=0;
 
   //Create jobs
-  int job[args->NO_JOBS];
   for(int i = 0; i < args->NO_JOBS; i++){
     sleep(sleep_time);
     //Set random duration between 1-10 for jobs
