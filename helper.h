@@ -40,4 +40,6 @@ int sem_init (int, int, int);
 void sem_wait (int, short unsigned int);
 void sem_signal (int, short unsigned int);
 int sem_close (int);
+
+//Similar to sem_wait function, but with 20 second waiting time limit.
 int sem_waittime(int id, short unsigned int num);

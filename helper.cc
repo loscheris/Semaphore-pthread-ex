@@ -7,6 +7,7 @@
  * sem_wait - Waits on a semaphore (akin to down ()) in the semaphore array
  * sem_signal - Signals a semaphore (akin to up ()) in the semaphore array
  * sem_close - Destroy the semaphore array
+ * sem_waittime - Set 20s waiting time limit to the function sem_wait
  ******************************************************************/
 
 # include "helper.h"
@@ -33,7 +34,7 @@ int sem_attach (key_t key)
     return -1;
   return id;
 }
- 
+
 int sem_create (key_t key, int num)
 {
   int id;
@@ -59,19 +60,6 @@ void sem_wait (int id, short unsigned int num)
   semop (id, op, 1);
 }
 
-
-int sem_waittime(int id, short unsigned int num){
-  struct sembuf op[] = {
-    {num,-1,SEM_UNDO}
-  };
-  struct timespec ts;
-  // clock_gettime(CLOCK_REALTIME, &ts);
-  ts.tv_sec = 20;
-  ts.tv_nsec = 0;
-  int temp =semtimedop(id,op,1,&ts);
-  return  temp;
-}
-
 void sem_signal (int id, short unsigned int num)
 {
   struct sembuf op[] = {
@@ -80,11 +68,22 @@ void sem_signal (int id, short unsigned int num)
   semop (id, op, 1);
 }
 
-
-
 int sem_close (int id)
 {
   if (semctl (id, 0, IPC_RMID, 0) < 0)
     return -1;
   return 0;
+}
+
+int sem_waittime(int id, short unsigned int num){
+  struct sembuf op[] = {
+    {num,-1,SEM_UNDO}
+  };
+  //Set waiting time limit for a semaphore
+  struct timespec ts;
+  ts.tv_sec = 20;
+  ts.tv_nsec = 0;
+  //Use semtimedop to limit the waiting time instead of semop
+  int temp =semtimedop(id,op,1,&ts);
+  return  temp;
 }
