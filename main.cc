@@ -90,7 +90,7 @@ int main (int argc, char **argv)
     pthread_join(consumerid[i], NULL);
   }
 
-  cout<<"Finished"<<endl;
+  cout<<"Program finished!"<<endl;
 
   //Clean up semaphores
   sem_close(sem_id);
