@@ -61,7 +61,7 @@ int main (int argc, char **argv)
   int job_consume = 0;
   int thread_id_p = 0;
   int thread_id_c = 0;
-  struct thread_args arguement;
+  thread_args arguement;
   arguement.NO_JOBS = no_job;
   arguement.QUEUE_SIZE = queue_size;
   arguement.BUFFER = buffer;
@@ -99,7 +99,7 @@ int main (int argc, char **argv)
 
 void *producer(void *parameter)
 {
-  struct thread_args* args = (struct thread_args*) parameter;
+  thread_args* args = (thread_args*) parameter;
   //Fetch thread ID for the current thread (critical session).
   sem_wait(args->SEM_ID,0);
   int thread_id = ++*(args->THREAD_ID_P);
@@ -115,7 +115,9 @@ void *producer(void *parameter)
     //semaphore for ensuring any empty space is available in 20 seconds
     int result = sem_waittime(args->SEM_ID,2);
     if(result == -1 && errno == EAGAIN){
+      sem_wait(args->SEM_ID,0);
       cout<<"Producer("<<thread_id<<"): Time out."<<endl;
+      sem_signal(args->SEM_ID,0);
       break;
     }
     //Enter critical session
@@ -143,7 +145,7 @@ void *producer(void *parameter)
 
 void *consumer (void *parameter)
 {
-  struct thread_args* args = (struct thread_args*) parameter;
+  thread_args* args = (thread_args*) parameter;
   //Fetch thread ID for the current thread (critical session).
   sem_wait(args->SEM_ID,0);
   int thread_id = ++ *(args->THREAD_ID_C);
